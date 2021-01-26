@@ -29,8 +29,6 @@ func run() error {
 		return fmt.Errorf("failed to create elasticsearch client: %w", err)
 	}
 
-	// indexing
-
 	indexing := func() error {
 		id := uuid.NewString()
 
@@ -53,8 +51,6 @@ func run() error {
 
 		return nil
 	}
-
-	// search
 
 	search := func() error {
 		var buf bytes.Buffer
