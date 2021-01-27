@@ -24,3 +24,8 @@ helm/elasticsearch/install:
 .PHONY: helm/elasticsearch/uninstall
 helm/elasticsearch/uninstall:
 	helm delete elasticsearch
+
+
+.PHONY: docker/start
+docker/start:
+	docker-compose -f ./deployments/docker-compose.yml up -d
