@@ -21,5 +21,5 @@ services:
     ports:
       - 5601:5601
 
-volumes:
-  es-data:
+# volumes:
+#   es-data:
