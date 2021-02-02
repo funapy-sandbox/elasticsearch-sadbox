@@ -29,3 +29,11 @@ helm/elasticsearch/uninstall:
 .PHONY: docker/start
 docker/start:
 	docker-compose -f ./deployments/docker-compose.yml up -d
+
+.PHONY: docker/down
+docker/down:
+	docker-compose -f ./deployments/docker-compose.yml down
+
+.PHONY: docker/stop
+docker/stio:
+	docker-compose -f ./deployments/docker-compose.yml stop
