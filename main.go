@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"strings"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -14,39 +14,92 @@ import (
 )
 
 const (
-	indexName = "user_tag"
+	indexName = "user"
 )
 
 // User represents user.
 type User struct {
-	Name string
-	Age  int
+	ID        string `json:"id"`
+	ChatbotID string `json:"chatbot_id"`
+	Tags      []Tag  `json:"tags"`
 }
 
-func run() error {
+// Tag --
+type Tag struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func testData() []User {
+	return []User{
+		{
+			ID:        "u1",
+			ChatbotID: "ch1",
+			Tags: []Tag{
+				{
+					ID:   "t1",
+					Name: "t1_name",
+				},
+			},
+		},
+		{
+			ID:        "u2",
+			ChatbotID: "ch1",
+			Tags: []Tag{
+				{
+					ID:   "t1",
+					Name: "t1_name",
+				},
+				{
+					ID:   "t2",
+					Name: "t2_name",
+				},
+			},
+		},
+		{
+			ID:        "u3",
+			ChatbotID: "ch3",
+			Tags: []Tag{
+				{
+					ID:   "t3",
+					Name: "t3_name",
+				},
+			},
+		},
+	}
+}
+
+func run(ctx context.Context) error {
 	c, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		return fmt.Errorf("failed to create elasticsearch client: %w", err)
 	}
 
 	indexing := func() error {
-		id := uuid.NewString()
+		for _, user := range testData() {
+			b, err := json.Marshal(user)
+			if err != nil {
+				return fmt.Errorf("failed to marshal object: %w", err)
+			}
 
-		req := esapi.IndexRequest{
-			Index:      indexName,
-			DocumentID: uuid.NewString(),
-			Refresh:    "true",
-			Body:       strings.NewReader(`{"name":"hlts2", "age":25}`),
-		}
+			id := uuid.NewString()
+			req := esapi.IndexRequest{
+				Index:      indexName,
+				DocumentID: id,
+				Refresh:    "true",
+				Body:       bytes.NewReader(b),
+			}
 
-		resp, err := req.Do(context.Background(), c)
-		if err != nil {
-			return fmt.Errorf("failed to create index: %w", err)
-		}
-		defer resp.Body.Close()
+			resp, err := req.Do(ctx, c)
+			if err != nil {
+				return fmt.Errorf("failed to create index: %w", err)
+			}
+			defer resp.Body.Close()
 
-		if resp.IsError() {
-			return fmt.Errorf("failed to create index id: %s  status: %s", id, resp.Status())
+			if resp.IsError() {
+				return fmt.Errorf("failed to create index id: %s  status: %s", id, resp.Status())
+			}
+
 		}
 
 		return nil
@@ -57,7 +110,7 @@ func run() error {
 		query := map[string]interface{}{
 			"query": map[string]interface{}{
 				"match": map[string]interface{}{
-					"name": "hlts2",
+					"chatbot_id": "ch1",
 				},
 			},
 		}
@@ -82,6 +135,13 @@ func run() error {
 			return fmt.Errorf("failed to search object status: %s", resp.Status())
 		}
 
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(b))
+
 		// TODO: decode
 
 		return nil
@@ -100,7 +160,7 @@ func run() error {
 }
 
 func main() {
-	if err := run(); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }
