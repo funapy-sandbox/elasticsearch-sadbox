@@ -21,7 +21,7 @@ const (
 type User struct {
 	ID        string `json:"id"`
 	ChatbotID string `json:"chatbot_id"`
-	Tags      []Tag  `json:"tags"`
+	Tags      []Tag  `json:"tags" elastic:"type:nested"`
 }
 
 // Tag --
